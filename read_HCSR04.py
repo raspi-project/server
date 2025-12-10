@@ -1,8 +1,8 @@
 import time
 import RPi.GPIO as GPIO
 
-TRIG = 23
-ECHO = 24
+TRIG = 26
+ECHO = 19
 ALERT_PIN = 18
 
 GPIO.setmode(GPIO.BCM)
