@@ -35,14 +35,19 @@ def on_message(client, userdata, msg):
     elif message == "OFF":
         GPIO.output(LED_PIN, False)
         client.publish(TOPIC_STATUS, "OFF")
+try:
+    client = mqtt.Client()
+    client.username_pw_set(USERNAME, PASSWORD)
+    client.tls_set()
 
-client = mqtt.Client()
-client.username_pw_set(USERNAME, PASSWORD)
-client.tls_set()
+    client.on_connect = on_connect
+    client.on_message = on_message
 
-client.on_connect = on_connect
-client.on_message = on_message
-
-print("Connecting to broker...")
-client.connect(BROKER, PORT, 60)
-client.loop_forever()
+    print("Connecting to broker...")
+    client.connect(BROKER, PORT, 60)
+    client.loop_forever()
+except KeyboardInterrupt:
+    print("KeyBoardInterrupt...")
+finally:
+    GPIO.cleanup()
+    print("Exiting from System")
