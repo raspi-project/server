@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MQTT LED Dashboard</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+</head>
+
+<body>
+  <h2>Raspberry Pi LED Control</h2>
+
+  <button onclick="ledOn()">LED ON</button>
+  <button onclick="ledOff()">LED OFF</button>
+
+  <h3>Status: <span id="status">---</span></h3>
+
+<script>
+const client = mqtt.connect(
+  "wss://YOUR_HIVEMQ_HOST:8884/mqtt",
+  {
+    username: "YOUR_USERNAME",
+    password: "YOUR_PASSWORD"
+  }
+);
+
+client.on("connect", () => {
+  document.getElementById("status").innerText = "Connected";
+  client.subscribe("umesh/led/status");
+});
+
+client.on("message", (topic, message) => {
+  if (topic === "umesh/led/status") {
+    document.getElementById("status").innerText = message.toString();
+  }
+});
+
+function ledOn() {
+  client.publish("umesh/led/control", "ON");
+}
+
+function ledOff() {
+  client.publish("umesh/led/control", "OFF");
+}
+</script>
+
+</body>
+</html>
