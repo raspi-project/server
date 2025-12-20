@@ -1,44 +1,120 @@
+
 <!DOCTYPE html>
 <html>
 <head>
-  <title>MQTT LED Dashboard</title>
+  <title>Raspberry Pi LED Control</title>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f4f4f4;
+    }
+
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #status {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    #notify {
+      color: green;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 
 <body>
-  <h2>Raspberry Pi LED Control</h2>
 
-  <button onclick="ledOn()">LED ON</button>
-  <button onclick="ledOff()">LED OFF</button>
+  <h2>Sirvi Raspberry Pi LED Control using MQTT Web Protocol</h2>
 
-  <h3>Status: <span id="status">---</span></h3>
+  <button id="connectBtn" onclick="toggleConnection()">Connect</button>
+
+  <h3>LED Status: <span id="status">Disconnected</span></h3>
+
+  <button onclick="ledOn()">ON LED</button>
+  <button onclick="ledOff()">OFF LED</button>
+
+  <div id="notify"></div>
 
 <script>
-const client = mqtt.connect(
-  "wss://YOUR_HIVEMQ_HOST:8884/mqtt",
-  {
-    username: "YOUR_USERNAME",
-    password: "YOUR_PASSWORD"
-  }
-);
+let client = null;
+let connected = false;
+let ledState = "OFF";
 
-client.on("connect", () => {
-  document.getElementById("status").innerText = "Connected";
-  client.subscribe("umesh/led/status");
-});
+function toggleConnection() {
+  if (!connected) {
+    client = mqtt.connect(
+      "wss://YOUR_HIVEMQ_HOST:8884/mqtt",
+      {
+        username: "YOUR_USERNAME",
+        password: "YOUR_PASSWORD"
+      }
+    );
 
-client.on("message", (topic, message) => {
-  if (topic === "umesh/led/status") {
-    document.getElementById("status").innerText = message.toString();
+    client.on("connect", () => {
+      connected = true;
+      document.getElementById("connectBtn").innerText = "Disconnect";
+      document.getElementById("status").innerText = "Connected";
+      showNotify("Connected to MQTT broker");
+      client.subscribe("umesh/led/status");
+    });
+
+    client.on("message", (topic, message) => {
+      if (topic === "umesh/led/status") {
+        ledState = message.toString();
+        document.getElementById("status").innerText = ledState;
+      }
+    });
+
+  } else {
+    client.end();
+    connected = false;
+    document.getElementById("connectBtn").innerText = "Connect";
+    document.getElementById("status").innerText = "Disconnected";
+    showNotify("Disconnected from broker");
   }
-});
+}
 
 function ledOn() {
-  client.publish("umesh/led/control", "ON");
+  if (!connected) {
+    showNotify("Please connect first", true);
+    return;
+  }
+
+  if (ledState === "ON") {
+    showNotify("LED is already ON", true);
+  } else {
+    client.publish("umesh/led/control", "ON");
+    showNotify("LED turned ON");
+  }
 }
 
 function ledOff() {
-  client.publish("umesh/led/control", "OFF");
+  if (!connected) {
+    showNotify("Please connect first", true);
+    return;
+  }
+
+  if (ledState === "OFF") {
+    showNotify("LED is already OFF", true);
+  } else {
+    client.publish("umesh/led/control", "OFF");
+    showNotify("LED turned OFF");
+  }
+}
+
+function showNotify(msg, error=false) {
+  const notify = document.getElementById("notify");
+  notify.innerText = msg;
+  notify.style.color = error ? "red" : "green";
 }
 </script>
 
